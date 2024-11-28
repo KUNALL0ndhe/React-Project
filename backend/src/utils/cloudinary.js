@@ -16,7 +16,7 @@ const uploadOnCloudinary = async (localFilePath) => {
         }) 
 
         // File has been uploaded successfully
-        concole.log("File uploaded ", response.url)
+        console.log("File uploaded ", response.url)
 
         fs.unlinkSync(localFilePath); // here post the file is in the local system after uploading to cloudinary it is removed from local machine
 
