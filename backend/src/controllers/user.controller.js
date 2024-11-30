@@ -1,25 +1,47 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js";
+import  ApiError  from "../utils/ApiError.js";
 import User from '../models/user.model.js'
 import ApiResponse from '../utils/ApiResponse.js'
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 
-const generateAccessandRefreshToken = async(userId) => {
+const generateAccessandRefreshToken = async (userId) => {
     try {
+        // Validate user existence
         const user = await User.findById(userId);
-        const accessToken = user.generateAccessToken();
-        const refreshToken = user.generateRefreshToken();
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+
+        // Generate access and refresh tokens
+        const accessToken = await user.generateAccessToken();
+        console.log("Access Token:", accessToken);
+
+        const refreshToken = await user.generateRefreshToken();
+        console.log("Refresh Token:", refreshToken);
+
+
+        // Validate token generation
+        if (!accessToken || typeof accessToken !== 'string') {
+            throw new ApiError(500, "Failed to generate access token");
+        }
+        if (!refreshToken || typeof refreshToken !== 'string') {
+            throw new ApiError(500, "Failed to generate refresh token");
+        }
+
+        // Save the refresh token to the user document
         user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
 
-        await user.save({ validateBeforeSave: false })
-
-        return { refreshToken, accessToken }
-
+        return { accessToken, refreshToken };
     } catch (error) {
-        throw new ApiError(500, "Something went wrong while genrating the refresh and access token")
+        // Log error for debugging
+        console.error("Error generating tokens:", error);
+
+        // Throw a detailed error
+        throw new ApiError(500, error.message || "Error generating access and refresh tokens");
     }
-}
+};
 
 const registerUser = asyncHandler( async (req, res ) => {
     // res.status(200).json({
@@ -101,9 +123,13 @@ const login = asyncHandler (async (req, res) => {
     console.log(email);
 
 
-    if (!username || !email) {
-        throw new ApiError(400, "username or email is required")        
-    };
+    if (!username && !email) {
+        throw new ApiError(400, "username or email is required")
+    }
+
+    // if (!(username || email)) {
+    //     throw new ApiError(400, "username or email is required")        
+    // };
 
    const user =  await User.findOne({
         $or : [ {username}, {email} ]
@@ -129,7 +155,7 @@ const login = asyncHandler (async (req, res) => {
     };
 
 
-    res.
+    return res.
     status(201)
     .cookie("accessToken", accessToken, option)
     .cookie("refreshToken",refreshToken, option)
