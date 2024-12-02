@@ -3,46 +3,26 @@ import  ApiError  from "../utils/ApiError.js";
 import User from '../models/user.model.js'
 import ApiResponse from '../utils/ApiResponse.js'
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import jwt from 'jsonwebtoken';
 
 
-const generateAccessandRefreshToken = async (userId) => {
+
+const generateAccessandRefreshToken = async(userId) =>{
     try {
-        // Validate user existence
-        const user = await User.findById(userId);
-        if (!user) {
-            throw new ApiError(404, "User not found");
-        }
+        const user = await User.findById(userId)
+        const accessToken = await user.generateAccessToken()
+        const refreshToken = await user.generateRefreshToken()
 
-        // Generate access and refresh tokens
-        const accessToken = await user.generateAccessToken();
-        console.log("Access Token:", accessToken);
+        user.refreshToken = refreshToken
+        await user.save({ validateBeforeSave: false })
 
-        const refreshToken = await user.generateRefreshToken();
-        console.log("Refresh Token:", refreshToken);
+        return {accessToken, refreshToken}
 
 
-        // Validate token generation
-        if (!accessToken || typeof accessToken !== 'string') {
-            throw new ApiError(500, "Failed to generate access token");
-        }
-        if (!refreshToken || typeof refreshToken !== 'string') {
-            throw new ApiError(500, "Failed to generate refresh token");
-        }
-
-        // Save the refresh token to the user document
-        user.refreshToken = refreshToken;
-        await user.save({ validateBeforeSave: false });
-
-        return { accessToken, refreshToken };
     } catch (error) {
-        // Log error for debugging
-        console.error("Error generating tokens:", error);
-
-        // Throw a detailed error
-        throw new ApiError(500, error.message || "Error generating access and refresh tokens");
+        throw new ApiError(500, "Something went wrong while generating referesh and access token")
     }
-};
-
+}
 const registerUser = asyncHandler( async (req, res ) => {
     // res.status(200).json({
     //     message: "OK Youtube"
@@ -196,4 +176,54 @@ const logout = asyncHandler( async( req, res ) => {
 
 })
 
-export {registerUser, login, logout, generateAccessandRefreshToken}
+const refreshAccessToken = asyncHandler( async (req, res) => {
+  const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(402,"Unauthorized Request");
+  }
+  try {
+    const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+
+    if (!decodedToken) {
+        throw new ApiError(402, "Token is Incorrect")
+    }
+
+     const user = await User.findById(decodedToken?._id);
+
+     if (!user) {
+        throw new ApiError(401, " User's Invalid Refresh Token")
+     }
+
+     if (incomingRefreshToken !== user?.refreshToken) {
+        throw new ApiError(402, "Refresh Token Expired or Used")
+     }
+
+     const options = {
+        httpOnly: true,
+        secure: true
+     }
+
+     const {accessToken, newRefreshToken} = generateAccessandRefreshToken(user._id)
+
+     res
+     .status(200)
+     .cookie("access Token", accessToken, options)
+     .cookie("refresh TOken", newRefreshToken, options )
+     .json(
+        new ApiResponse(
+            201,
+            {
+                accessToken, refreshToken: newRefreshToken, 
+            },
+            "Refresh Token Refreshed"
+        )
+     )
+
+
+  } catch (error) {
+    throw new ApiError(401 , error.message || "invalid Refresh Token")
+  }
+}) 
+
+export {registerUser, login, logout, generateAccessandRefreshToken, refreshAccessToken}
