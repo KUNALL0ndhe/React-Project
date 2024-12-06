@@ -207,7 +207,7 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
 
      const {accessToken, newRefreshToken} = await generateAccessandRefreshToken(user._id)
 
-     res
+    return res
      .status(200)
      .cookie("access Token", accessToken, options)
      .cookie("refresh TOken", newRefreshToken, options )
@@ -254,6 +254,18 @@ const changeCurrentPassword = asyncHandler( async ( req, res) => {
         throw new ApiError(401, "invalid password request")
     }
 });
+
+const getCurrentUSer = asyncHandler( async(req, res) => {
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            req.user,
+            "User Fetched Successfully"
+        )
+    )
+})
 
 const updateAccountdetails = asyncHandler ( async (req, res ) => {
 
@@ -496,6 +508,7 @@ export {
     generateAccessandRefreshToken, 
     refreshAccessToken, 
     changeCurrentPassword,
+    getCurrentUSer,
     updateAccountdetails,
     updateUserAvatar,
     updateUserCoverImage,
