@@ -154,7 +154,7 @@ const logout = asyncHandler( async( req, res ) => {
         req.user._id,
         {
             $unset: {
-                refreshToken: 1
+                refreshToken: 1  //{ * / * This removes the field from the document * /   *}
             }
         },
         {
@@ -184,20 +184,23 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
     throw new ApiError(402,"Unauthorized Request");
   }
   try {
-    const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
-
+    const decodedToken = jwt.verify(
+        incomingRefreshToken, 
+        process.env.REFRESH_TOKEN_SECRET
+    )
+    
     if (!decodedToken) {
         throw new ApiError(402, "Token is Incorrect")
     }
-
-     const user = await User.findById(decodedToken?._id);
+    
+    const user = await User.findById(decodedToken?._id)
 
      if (!user) {
         throw new ApiError(401, " User's Invalid Refresh Token")
      }
 
      if (incomingRefreshToken !== user?.refreshToken) {
-        throw new ApiError(402, "Refresh Token Expired or Used")
+        throw new ApiError(401, "Refresh Token Expired or Used")
      }
 
      const options = {
@@ -205,12 +208,12 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
         secure: true
      }
 
-     const {accessToken, newRefreshToken} = await generateAccessandRefreshToken(user._id)
+    const {accessToken, newRefreshToken} = await generateAccessandRefreshToken(user._id)
 
     return res
      .status(200)
-     .cookie("access Token", accessToken, options)
-     .cookie("refresh TOken", newRefreshToken, options )
+     .cookie("accessToken", accessToken, options)
+     .cookie("refreshToken", newRefreshToken, options )
      .json(
         new ApiResponse(
             201,
@@ -453,7 +456,7 @@ const getWatchedHistory = asyncHandler( async (req, res) => {
     const user =  await User.aggregate([
         {
             $match: {
-                _id: new mongoose.Schema.Types.ObjectId(req.user._id)
+                _id: new mongoose.Types.ObjectId(req.user._id)
             }
         },
         {
@@ -479,14 +482,17 @@ const getWatchedHistory = asyncHandler( async (req, res) => {
                                 }
                             ]
                         }
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$owner"
+                            }
+                        }
                     }
                 ]
-            },
-            $addFields: {
-                owner: {
-                    $first: "$owner"
-                }
             }
+            
         }
     ])
 

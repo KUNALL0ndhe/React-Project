@@ -36,7 +36,7 @@ userRouter.route("/register").post(
     userRouter.route("/logout").post(verifyjwtToken, logout)
     userRouter.route("/refresh-token").post(refreshAccessToken)
     userRouter.route("/change-password").post(verifyjwtToken, changeCurrentPassword)
-    userRouter.route("/current-user").post(verifyjwtToken, getCurrentUSer)
+    userRouter.route("/current-user").get(verifyjwtToken, getCurrentUSer)
     userRouter.route("/update-account").patch(verifyjwtToken, updateAccountdetails)
 
     userRouter.route("/avatar").patch(verifyjwtToken, upload.single("avatar"), updateUserAvatar)
