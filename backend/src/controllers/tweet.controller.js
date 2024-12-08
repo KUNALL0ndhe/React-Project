@@ -95,7 +95,53 @@ const getUserTweets = asyncHandler(async (req, res) => {
 })
 
 const updateTweet = asyncHandler(async (req, res) => {
-    //TODO: update tweet
+    //TODO: update 
+    
+    try {
+    const { tweetId } = req.params
+    const { content } = req.body
+
+    if (! tweetId || !content ) {
+        throw new ApiError(400, "TweetId or Content is missing") // Handle Either Empty Field
+    }
+
+    if (!mongoose.isValidObjectId(tweetId)) {
+        throw new ApiError(400, "Invalid Id") // Handle Valid Object via mongoose
+    }
+
+    const updatedTweet = await Tweet.findByIdAndUpdate(
+        tweetId,
+        {
+            $set: {
+                content
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+    if (!updatedTweet) {
+        throw new ApiError(404, "TWeet not Found and failed to update")
+    }
+
+    if (updatedTweet.owner.toString() !== req.user?._id.toString() ) {
+        throw new ApiError(403, "You Cannot update another tweets")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,
+            updatedTweet,
+            "Tweet has been updated"
+        )
+    )
+        
+    }  catch (error) {
+        console.error("Error in Update Tweets:", error);
+        throw new ApiError(401, "Error in updating the tweets for this user");
+    }
 })
 
 const deleteTweet = asyncHandler(async (req, res) => {
