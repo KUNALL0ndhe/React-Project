@@ -107,7 +107,19 @@ const updateTweet = asyncHandler(async (req, res) => {
 
     if (!mongoose.isValidObjectId(tweetId)) {
         throw new ApiError(400, "Invalid Id") // Handle Valid Object via mongoose
+    };
+
+    const tweetToUpdate = await Tweet.findById(tweetId);
+
+    if (!tweetToUpdate) {
+        throw new ApiError(400, "Tweet with the provided ID does not exist");
     }
+
+
+    if (tweetToUpdate.owner.toString() !== req.user?._id.toString() ) {
+        throw new ApiError(403, "You Cannot update another tweets")
+    }
+
 
     const updatedTweet = await Tweet.findByIdAndUpdate(
         tweetId,
@@ -120,14 +132,6 @@ const updateTweet = asyncHandler(async (req, res) => {
             new: true
         }
     )
-
-    if (!updatedTweet) {
-        throw new ApiError(404, "TWeet not Found and failed to update")
-    }
-
-    if (updatedTweet.owner.toString() !== req.user?._id.toString() ) {
-        throw new ApiError(403, "You Cannot update another tweets")
-    }
 
     return res
     .status(200)
@@ -162,7 +166,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
         const tweetToDelete = await Tweet.findById(tweetId)
 
         if (!tweetToDelete) {
-            throw new ApiError(400, "Tweet not found");
+            throw new ApiError(400, "Tweet with the provided ID does not exist");
         }
 
         if (tweetToDelete.owner.toString() !== req.user?._id.toString()) {
