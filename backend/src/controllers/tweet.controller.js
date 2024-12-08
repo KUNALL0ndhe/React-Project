@@ -146,11 +146,46 @@ const updateTweet = asyncHandler(async (req, res) => {
 
 const deleteTweet = asyncHandler(async (req, res) => {
     //TODO: delete tweet
+
+    try {
+
+        const { tweetId } = req.params
+        
+        if (!tweetId) {
+            throw new ApiError(400, "Tweet is missing");
+        }
+
+        if (!mongoose.isValidObjectId(tweetId)) {
+            throw new ApiError(400, "Invalid Id")
+        }
+
+        const tweetToDelete = await Tweet.findById(tweetId)
+
+        if (!tweetToDelete) {
+            throw new ApiError(400, "Tweet not found");
+        }
+
+        if (tweetToDelete.owner.toString() !== req.user?._id.toString()) {
+            throw new ApiError(403, "You Cannot delete another tweets")
+        }
+
+        const deletedTweet = await Tweet.findByIdAndDelete(tweetId);
+
+
+        return res
+        .status(200)
+        .json( new ApiResponse(200, deletedTweet ,"Tweet deleted successfully"))
+
+
+    }  catch (error) {
+        console.error("Error in deleting Tweet", error);
+        throw new ApiError(500, "Error in deleting the tweet ");
+    }
 })
 
 export {
     createTweet,
     getUserTweets,
-    updateTweet,
+    updateTweet,  
     deleteTweet
 }
