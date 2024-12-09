@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import Like from "../models/likes.model";
 import ApiError from "../utils/ApiError";
 import ApiResponse from "../utils/ApiResponse";
@@ -149,6 +149,55 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 
 const getLikedVideos = asyncHandler(async (req, res) => {
     //TODO: get all liked videos
+
+    try {
+        const userId = req.user?._id;
+    
+        if (!userId ||!mongoose.isValidObjectId(userId)) {
+            throw new ApiError(400, "userId is missing or Invalid user Id")
+        }
+    
+        const likedVideos = await Like.aggregate([
+            {
+                $match: {
+                        likedBy: new mongoose.Types.ObjectId(userId)
+                }
+            },
+            {
+                $lookup: {
+                    from: "videos",  // The collection name for videos
+                    localField: "video", // The field in Like model (video ID)
+                    foreignField: "_id", // The field in Video model (ID of video)
+                    as: "video" // Alias for the returned array of videos
+                }
+            },
+            {
+                $unwind: '$video'
+            }
+        ])
+    
+        if (!likedVideos.length) {
+            throw new ApiError(404, "Videos Does not Exists")
+        }
+    
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                likedVideos,
+                "All Videos successfully fetched",
+    
+            )
+        )
+    } catch (error) {
+        console.error("Error fetching liked videos:", error);
+        throw new ApiError(500, error.message || "Failed to fetch liked videos");
+    }
+
+
+
+
 })
 
 export {

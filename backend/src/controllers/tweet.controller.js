@@ -66,7 +66,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
                     }
                 },
                 {
-                    $unwind: "$user"
+                    $unwind: "$user" // merge the array document and converrt it to the object format 
                 }
             
         ]);
