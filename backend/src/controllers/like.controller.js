@@ -103,6 +103,47 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 const toggleTweetLike = asyncHandler(async (req, res) => {
     const {tweetId} = req.params
     //TODO: toggle like on tweet
+    const userId = req.user?._id;
+
+    if (!tweetId || !mongoose.isValidObjectId(tweetId)) {
+        throw new  ApiError(400, "tweetId is missing or Invalid tweet Id")
+    }
+    
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+        throw new  ApiError(400, "userId is missing or Invalid user Id")
+    }
+
+    const existingLike = await Like.findOne( {likedBy: userId, tweet: tweetId } )
+
+    if (existingLike) {
+        const deleteTweet = await Like.findOneAndDelete( { likedBy: userId, tweet: tweetId } );
+
+        if (!deleteTweet) {
+            throw new ApiError(404, "Cannot unlike the tweet");
+        }
+
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(
+            200,
+            null,
+            "Tweet unlike successfully"
+            )
+        )
+    }
+
+    const createTweetLiked = await Like.create({ likedBy: userId, tweet: tweetId })
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            createTweetLiked,
+            "Tweet liked successfully"
+        )
+    )
 }
 )
 
