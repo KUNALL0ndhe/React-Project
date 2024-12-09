@@ -22,12 +22,16 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
     if (existingLike) {
         //Unlike the video
-        const deleteLike = await Like.findByIdAndDelete(existingLike._id)
+        const deleteLike = await Like.findOneAndDelete({video: videoId , likedBy: userId})
+
+        if (!deleteLike) {
+            throw new ApiError(400, "Failed to Unlike the Video")
+        }
 
         return res
         .status(200)
         .json(
-            new ApiResponse(200, deleteLike, " Video unlike successfully")
+            new ApiResponse(200, null, " Video unlike successfully")
         )
     }
 
@@ -46,8 +50,53 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 })
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
-    const {commentId} = req.params
-    //TODO: toggle like on comment
+    try {
+        const {commentId} = req.params
+        //TODO: toggle like on comment
+    
+        const userId = req.user?._id;
+
+        if (!commentId || !mongoose.isValidObjectId(commentId)) {
+            throw new  ApiError(400, "commentId is missing or Invalid comment Id")
+        }
+
+        if (!userId || !mongoose.isValidObjectId(userId)) {
+            throw new  ApiError(400, "userId is missing or Invalid user Id")
+        }
+
+        const existingLike = await Like.findOne({ comment: commentId, likedBy: userId }) // To find the exact comment id and user id
+
+        if (existingLike) {
+        const unlikeComment = await Like.findOneAndDelete( {comment: commentId, likedBy: userId }) // used this as .remove() is deprecated
+                                                                                                        // As i want to delete exact comment of user
+
+            if (!unlikeComment) {
+            throw new ApiError(400, "Failed to Unlike the Comment")    
+            }
+
+            return res
+            .status(200)
+            .json(
+                new ApiResponse(200, null, "Comment Deleted Successfully") // send the deleted user as to be updated
+            )
+        }
+
+        const createComment = await Like.create( {comment: commentId, likedBy: userId})
+
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                createComment,
+                "Comment created successfully"
+            )
+        )
+    
+    }  catch (error) {
+        console.error("Error toggling comment like:", error);
+        throw new ApiError(500, error.message || "Failed to toggle like on comment");
+      }
 
 })
 
