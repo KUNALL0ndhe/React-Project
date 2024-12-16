@@ -107,6 +107,55 @@ const addComment = asyncHandler(async (req, res) => {
      
 })
 
+const updateComment = asyncHandler(async (req, res) => {
+    // TODO: update a comment
+
+    try {
+        const userId = req.user?._id; // to get the user ID
+        const { comment } = req.body; // new comment to add
+        const { commentId } = req.params; // to get the comment ID from the search params
+
+        if (!userId || !mongoose.isValidObjectId(userId)) {
+            throw new ApiError(400, "Invalid or missing user ID") // check for userId and its valid object
+        }
+        if (!comment || comment.trim() === "")  {
+            throw new ApiError(400, "Content comment is missing or empty")    // check for the comment is present to update
+        }
+
+        if (!commentId || !mongoose.isValidObjectId(commentId)) {
+            throw new ApiError(400, "Invalid or missing commentId ID")
+        };
+
+        const existingComment = await Comment.findById(commentId);
+
+        if (!existingComment) {
+            throw new ApiError(404, "Comment not found")
+        }
+
+        if ( existingComment.owner?.toString() !== userId) {
+            throw new ApiError(403, "You are not Authorized to update another's comment")
+        }
+
+        const updatedComment = await Comment.findByIdAndUpdate(
+            commentId,
+            { content: comment }, // Here the content field is updated by comment
+            { new: true} // returns the new updated document 
+        );
+
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                updatedComment,
+                "Comment updated Succesfully"
+            )
+        )
+
+    } catch (error) {
+        throw new ApiError(500, error.message || "Failed to update comment");   
+    }
+})
 
 const deleteComment = asyncHandler(async (req, res) => {
     // TODO: delete a comment
