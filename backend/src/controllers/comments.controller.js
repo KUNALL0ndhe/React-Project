@@ -65,11 +65,48 @@ const getVideoComments = asyncHandler(async (req, res) => {
 })
 const addComment = asyncHandler(async (req, res) => {
     // TODO: add a comment to a video
+
+   try {
+     const { content } = req.body; // i will get this from the frontend
+     const {videoId} = req.params; // i will get this from the search parameter
+ 
+     const userId  = req.user?._id; // if user exists then search for _id
+ 
+     if (!content || content.trim() === "" ) {
+         throw new ApiError(400, "Content comment is missing or empty")
+     }
+ 
+     if (!videoId || !mongoose.isValidObjectId(videoId)) {
+         throw new ApiError(400, "Invalid or missing Video ID")
+     };
+ 
+     if (!userId || !mongoose.isValidObjectId(userId)) {
+         throw new ApiError(400, "Invalid or missing user ID")
+     };
+     
+     // Creating Comment Model
+     const createComment = await Comment.create({
+         content,       // Content comment
+         video: videoId,    // in video the video ID
+         owner: userId,     // In the owner the user id
+     });
+ 
+     return res
+     .status(201)
+     .json( 
+         new ApiResponse(
+             201,
+             createComment,
+             "Comment added on Video"
+         )
+     )
+   } catch (error) {
+    throw new ApiError(500, error.message || "Failed to add comment");
+
+   }
+     
 })
 
-const updateComment = asyncHandler(async (req, res) => {
-    // TODO: update a comment
-})
 
 const deleteComment = asyncHandler(async (req, res) => {
     // TODO: delete a comment
