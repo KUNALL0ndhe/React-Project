@@ -21,7 +21,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
     }
 
    try {
-     const comment = await Comment.aggregatePaginate(
+     const comment = await Comment.aggregatePaginate( //Pagination is used to list out limited items on the page 
          Comment.aggregate([
              {
                  $match: {
