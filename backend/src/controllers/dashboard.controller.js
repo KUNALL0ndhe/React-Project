@@ -87,11 +87,14 @@ const getChannelStats = asyncHandler(async (req, res) => {
     console.error("Error while getting the Stats", error);
     throw new ApiError(500,error.message || "Failed to get the stats")
    }
+})
 
-const getChannelVideos = asyncHandler(async (req, res) => {
+
+   const getChannelVideos = asyncHandler(async (req, res) => {
     // TODO: Get all the videos uploaded by the channel
 })
 
 export {
-    getChannelStats
-};
+    getChannelStats, 
+    getChannelVideos
+    }
