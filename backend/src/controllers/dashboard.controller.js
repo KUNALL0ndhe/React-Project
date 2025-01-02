@@ -11,7 +11,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
    try {
     const {channelId} = req.params;
 
-    if (!isValidObjectId(channelId)) {
+    if (!mongoose.isValidObjectId(channelId)) {
         throw new ApiError(400, "Invalid or missing channel ID");        
     }
 
@@ -90,8 +90,39 @@ const getChannelStats = asyncHandler(async (req, res) => {
 })
 
 
-   const getChannelVideos = asyncHandler(async (req, res) => {
+const getChannelVideos = asyncHandler(async (req, res) => {
     // TODO: Get all the videos uploaded by the channel
+
+    try {
+
+        const { channelId } = req.params;
+
+        if (!mongoose.isValidObjectId(channelId)) {
+            throw new ApiError(400, "Invalid or missing channel ID");        
+        }
+
+        const getAllVideos = await Video.find({owner: channelId})
+        .select("_id title description views createdAt")
+        .sort({ createdAt: -1 });
+
+        if (getAllVideos.length === 0) {
+            throw new ApiError(404, "No videos found for this channel")  
+        }
+
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                getAllVideos,
+                "Videos fetched successfully."
+            )
+        )
+        
+    } catch (error) {
+        console.error("Error while getting the videos", error);
+        throw new ApiError(500,error.message || "Failed to get the videos")
+    }
 })
 
 export {
