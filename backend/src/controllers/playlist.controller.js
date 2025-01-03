@@ -210,9 +210,52 @@ const deletePlaylist = asyncHandler(async (req, res) => {
 })
 
 const updatePlaylist = asyncHandler(async (req, res) => {
-    const {playlistId} = req.params
-    const {name, description} = req.body
     //TODO: update playlist
+    
+    try {
+        const {playlistId} = req.params
+        const {name, description} = req.body
+
+        if (!playlistId || !mongoose.isValidObjectId(playlistId)) {
+            throw new ApiError(400, "Invalid or missing playlist ID")
+         }
+        
+        if (!name || !description) {
+            throw new ApiError(400, "Name or Description is Invalid")
+        }
+
+        const myUpdatePlaylist = await Playlist.findByIdAndUpdate(
+            playlistId,
+            {
+                $set : {
+                    name,
+                    description,
+                }
+            },
+            {
+                new: true
+            }
+        );
+
+        if (!myUpdatePlaylist) {
+            throw new ApiError(404, "Playlist cannot be update")
+        }
+
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                myUpdatePlaylist,
+                "Playlist updated successfully"
+            )
+        );
+
+        
+    } catch (error) {
+        console.error("Error in updating the playlist", error);
+        throw new ApiError(500, error.message || "Failed to update the playlist");
+    }
 })
 
 export {
