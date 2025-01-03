@@ -179,8 +179,34 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 })
 
 const deletePlaylist = asyncHandler(async (req, res) => {
-    const {playlistId} = req.params
     // TODO: delete playlist
+    try {
+        const {playlistId} = req.params
+
+        if (!playlistId || !mongoose.isValidObjectId(playlistId)) {
+            throw new ApiError(400, "Invalid or missing playlist ID")
+         }
+
+        const myDeletedPlaylist = await Playlist.findByIdAndDelete(playlistId);
+
+        if (!myDeletedPlaylist) {
+            throw new ApiError(404, "Playlist not found")
+        }
+
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                null,
+                "Playlist deleted Successfully."
+            )
+        );
+
+    } catch (error) {
+        console.error("Error in removing video from playlist", error);
+        throw new ApiError(500, error.message || "Failed to remove video from playlist");
+    }
 })
 
 const updatePlaylist = asyncHandler(async (req, res) => {
