@@ -1,29 +1,75 @@
-import ApiError from "../utils/ApiError.js"
-import ApiResponse from "../utils/ApiResponse.js"
-import {asyncHandler} from "../utils/asyncHandler.js"
+import mongoose from 'mongoose';
+import ApiError from "../utils/ApiError.js";
+import {asyncHandler} from "../utils/asyncHandler.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import {Playlist} from "../models/playlist.model.js";
 
 
-const healthcheck = asyncHandler(async (req, res) => {
-    //TODO: build a healthcheck response that simply returns the OK status as json with a message
+const createPlaylist = asyncHandler(async (req, res) => {
     try {
-        return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                null,
-                "HealthCheck done , connected with the server ."
-            )
-        )
+        const { name, description } = req.body;
+        const owner = req.user?._id;
+
+        if (!name || !description) {
+            throw new ApiError(400, "Name and description are required");
+        }
+
+        if (!owner || !mongoose.isValidObjectId(owner)) {
+            throw new ApiError(400, "Invalid or missing owner ID");
+        }
+
+        const playlist = await Playlist.create({
+            name,
+            description,
+            owner,
+        });
+
+        res.status(201).json(
+            new ApiResponse(201, playlist, "Playlist created successfully")
+        );
     } catch (error) {
-        throw new ApiError(
-            500,
-            error.message ||  "Something went wrong while connecting the server. "
-        )
+        console.error("Error creating playlist:", error);
+        throw new ApiError(500, error.message || "Failed to create playlist");
     }
+});
+
+
+const getUserPlaylists = asyncHandler(async (req, res) => {
+    
+})
+
+const getPlaylistById = asyncHandler(async (req, res) => {
+    const {playlistId} = req.params
+    //TODO: get playlist by id
+})
+
+const addVideoToPlaylist = asyncHandler(async (req, res) => {
+    const {playlistId, videoId} = req.params
+})
+
+const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
+    const {playlistId, videoId} = req.params
+    // TODO: remove video from playlist
+
+})
+
+const deletePlaylist = asyncHandler(async (req, res) => {
+    const {playlistId} = req.params
+    // TODO: delete playlist
+})
+
+const updatePlaylist = asyncHandler(async (req, res) => {
+    const {playlistId} = req.params
+    const {name, description} = req.body
+    //TODO: update playlist
 })
 
 export {
-    healthcheck
-    }
-    
+    createPlaylist,
+    getUserPlaylists,
+    getPlaylistById,
+    addVideoToPlaylist,
+    removeVideoFromPlaylist,
+    deletePlaylist,
+    updatePlaylist
+}
