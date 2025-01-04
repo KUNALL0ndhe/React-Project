@@ -46,4 +46,4 @@ userRouter.route("/register").post(
     userRouter.route("/history").get(verifyjwtToken, getWatchedHistory)
 
 
-export default userRouter 
+export default userRouter;

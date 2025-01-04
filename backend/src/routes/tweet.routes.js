@@ -8,9 +8,11 @@ import {
 } from '../controllers/tweet.controller.js';
 import { verifyjwtToken } from '../middlewares/auth.middleware.js'
 
-const tweetRouter = Router();
-tweetRouter.use(verifyjwtToken); // Applied JWT verification to all the Routes in the file
+const router = Router();
+router.use(verifyjwtToken); // Applied JWT verification to all the Routes in the file
 
-tweetRouter.route("/").post(createTweet);
-tweetRouter.route("/user/:userId").get(getUserTweets);
-tweetRouter.route("/:tweetId").patch(updateTweet).delete(deleteTweet);
+router.route("/").post(createTweet);
+router.route("/user/:userId").get(getUserTweets);
+router.route("/:tweetId").patch(updateTweet).delete(deleteTweet);
+
+export default router;
